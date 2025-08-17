@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class spawner : MonoBehaviour  // Имя класса с маленькой буквы
+public class Spawner : MonoBehaviour
 {
     [System.Serializable]
     public class CollectableItem
@@ -15,14 +15,20 @@ public class spawner : MonoBehaviour  // Имя класса с маленько
     public Transform spawnParent;
     public Vector3 firstSpawnPos = new Vector3(0, 4, 0);
     public Vector3 spawnOffset = new Vector3(0, -1.2f, 0);
-    public int maxSpawned = 5;  // Максимум 5 предметов
+    public int maxSpawned = 5;
 
     [Header("Appearance")]
     public float fadeStep = 0.1f;
 
+    [Header("Background Settings")]
+    public Transform background; // Теперь используем Transform фона
+    public LayerMask backgroundLayer;
+
     private List<GameObject> spawnedObjects = new List<GameObject>();
     private Vector3 nextSpawnPos;
     private Dictionary<GameObject, CollectableItem> itemMap = new Dictionary<GameObject, CollectableItem>();
+    private GameObject currentlyDraggedObject;
+    private Vector3 offset;
 
     private void Start()
     {
@@ -41,6 +47,115 @@ public class spawner : MonoBehaviour  // Имя класса с маленько
                 itemMap.Add(item.prefab, item);
             }
         }
+    }
+
+    private void Update()
+    {
+        HandleDrag();
+    }
+
+    private void HandleDrag()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            TryStartDrag();
+        }
+
+        if (currentlyDraggedObject != null)
+        {
+            if (Input.GetMouseButton(0))
+            {
+                ContinueDrag();
+            }
+            else
+            {
+                EndDrag();
+            }
+        }
+    }
+
+    private void TryStartDrag()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+        if (hit.collider != null && spawnedObjects.Contains(hit.collider.gameObject))
+        {
+            currentlyDraggedObject = hit.collider.gameObject;
+            offset = currentlyDraggedObject.transform.position - 
+                   Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
+        }
+    }
+
+    private void ContinueDrag()
+    {
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
+        currentlyDraggedObject.transform.position = mousePos + offset;
+    }
+
+    private void EndDrag()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(
+            currentlyDraggedObject.transform.position, 
+            Vector2.zero, 
+            Mathf.Infinity, 
+            backgroundLayer);
+
+        if (hit.collider != null && background != null)
+        {
+            // Фиксируем объект как дочерний к фону
+            FixObjectToBackground(currentlyDraggedObject);
+        }
+        else
+        {
+            ReturnObjectToSpawnPosition(currentlyDraggedObject);
+        }
+
+        currentlyDraggedObject = null;
+    }
+
+    private void FixObjectToBackground(GameObject obj)
+    {
+        // Делаем объект дочерним к фону
+        obj.transform.SetParent(background);
+        
+        // Сохраняем мировые координаты перед изменением parent
+        Vector3 worldPosition = obj.transform.position;
+        Quaternion worldRotation = obj.transform.rotation;
+        
+        // Обновляем трансформ относительно родителя
+        obj.transform.position = worldPosition;
+        obj.transform.rotation = worldRotation;
+
+        // Делаем объект статичным
+        MakeObjectStatic(obj);
+        
+        // Удаляем из списка спавненных объектов
+        spawnedObjects.Remove(obj);
+        
+        // Сдвигаем оставшиеся объекты
+        ShiftItemsUp();
+    }
+
+    private void ReturnObjectToSpawnPosition(GameObject obj)
+    {
+        int index = spawnedObjects.IndexOf(obj);
+        if (index >= 0)
+        {
+            obj.transform.localPosition = firstSpawnPos + spawnOffset * index;
+        }
+    }
+
+    private void MakeObjectStatic(GameObject obj)
+    {
+        // Удаляем компоненты для взаимодействия
+        var dragger = obj.GetComponent<ItemClickDetector>();
+        if (dragger != null) Destroy(dragger);
+
+        // Удаляем коллайдер, если он есть
+        var collider = obj.GetComponent<Collider2D>();
+        if (collider != null) Destroy(collider);
+
+        // Делаем объект неинтерактивным
+        obj.layer = LayerMask.NameToLayer("Ignore Raycast");
     }
 
     public void SpawnItem(CollectableItem item)
@@ -79,7 +194,7 @@ public class spawner : MonoBehaviour  // Имя класса с маленько
         
         for (int i = 0; i < spawnedObjects.Count; i++)
         {
-            spawnedObjects[i].transform.localPosition += -spawnOffset;
+            spawnedObjects[i].transform.localPosition = firstSpawnPos + spawnOffset * i;
             float alpha = 1f - i * fadeStep;
             SetObjectAlpha(spawnedObjects[i], Mathf.Clamp(alpha, 0.3f, 1f));
             
@@ -118,10 +233,10 @@ public class spawner : MonoBehaviour  // Имя класса с маленько
 
 public class ItemClickDetector : MonoBehaviour
 {
-    private spawner itemSpawner;
-    private spawner.CollectableItem myItem;
+    private Spawner itemSpawner;
+    private Spawner.CollectableItem myItem;
 
-    public void Setup(spawner spawner, spawner.CollectableItem item)
+    public void Setup(Spawner spawner, Spawner.CollectableItem item)
     {
         this.itemSpawner = spawner;
         this.myItem = item;
