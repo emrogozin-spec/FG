@@ -13,7 +13,7 @@ public class Spawner : MonoBehaviour
     [Header("Spawn Settings")]
     public List<CollectableItem> itemsToSpawn = new List<CollectableItem>();
     public Transform spawnParent;
-    public Vector3 firstSpawnPos = new Vector3(0, 4, 0);
+    public Vector3 firstSpawnPos = new Vector3(0, 4, -6); // Z = -6
     public Vector3 spawnOffset = new Vector3(0, -1.2f, 0);
     public int maxSpawned = 5;
 
@@ -21,14 +21,16 @@ public class Spawner : MonoBehaviour
     public float fadeStep = 0.1f;
 
     [Header("Background Settings")]
-    public Transform background; // Теперь используем Transform фона
+    public Transform background; // Движущийся фон
     public LayerMask backgroundLayer;
 
     private List<GameObject> spawnedObjects = new List<GameObject>();
+    private List<GameObject> fixedObjects = new List<GameObject>();
     private Vector3 nextSpawnPos;
     private Dictionary<GameObject, CollectableItem> itemMap = new Dictionary<GameObject, CollectableItem>();
     private GameObject currentlyDraggedObject;
     private Vector3 offset;
+    private Vector3 dragStartBackgroundPos;
 
     private void Start()
     {
@@ -77,34 +79,38 @@ public class Spawner : MonoBehaviour
     private void TryStartDrag()
     {
         RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-        if (hit.collider != null && spawnedObjects.Contains(hit.collider.gameObject))
+        if (hit.collider != null && (spawnedObjects.Contains(hit.collider.gameObject) || fixedObjects.Contains(hit.collider.gameObject)))
         {
             currentlyDraggedObject = hit.collider.gameObject;
             offset = currentlyDraggedObject.transform.position - 
                    Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
+            dragStartBackgroundPos = background.position;
         }
     }
 
     private void ContinueDrag()
     {
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
-        currentlyDraggedObject.transform.position = mousePos + offset;
+        Vector3 newPosition = mousePos + offset;
+        
+        // Учитываем движение фона
+        Vector3 backgroundMovement = background.position - dragStartBackgroundPos;
+        currentlyDraggedObject.transform.position = new Vector3(newPosition.x, newPosition.y, -6) + backgroundMovement;
     }
 
     private void EndDrag()
     {
         RaycastHit2D hit = Physics2D.Raycast(
-            currentlyDraggedObject.transform.position, 
-            Vector2.zero, 
-            Mathf.Infinity, 
+            Camera.main.ScreenToWorldPoint(Input.mousePosition),
+            Vector2.zero,
+            Mathf.Infinity,
             backgroundLayer);
 
         if (hit.collider != null && background != null)
         {
-            // Фиксируем объект как дочерний к фону
             FixObjectToBackground(currentlyDraggedObject);
         }
-        else
+        else if (spawnedObjects.Contains(currentlyDraggedObject))
         {
             ReturnObjectToSpawnPosition(currentlyDraggedObject);
         }
@@ -114,25 +120,18 @@ public class Spawner : MonoBehaviour
 
     private void FixObjectToBackground(GameObject obj)
     {
-        // Делаем объект дочерним к фону
-        obj.transform.SetParent(background);
+        // Устанавливаем Z = -6
+        obj.transform.position = new Vector3(obj.transform.position.x, obj.transform.position.y, -6);
         
-        // Сохраняем мировые координаты перед изменением parent
-        Vector3 worldPosition = obj.transform.position;
-        Quaternion worldRotation = obj.transform.rotation;
+        // Переносим в список зафиксированных
+        if (spawnedObjects.Contains(obj))
+        {
+            spawnedObjects.Remove(obj);
+            fixedObjects.Add(obj);
+            ShiftItemsUp();
+        }
         
-        // Обновляем трансформ относительно родителя
-        obj.transform.position = worldPosition;
-        obj.transform.rotation = worldRotation;
-
-        // Делаем объект статичным
         MakeObjectStatic(obj);
-        
-        // Удаляем из списка спавненных объектов
-        spawnedObjects.Remove(obj);
-        
-        // Сдвигаем оставшиеся объекты
-        ShiftItemsUp();
     }
 
     private void ReturnObjectToSpawnPosition(GameObject obj)
@@ -140,21 +139,19 @@ public class Spawner : MonoBehaviour
         int index = spawnedObjects.IndexOf(obj);
         if (index >= 0)
         {
-            obj.transform.localPosition = firstSpawnPos + spawnOffset * index;
+            obj.transform.position = firstSpawnPos + spawnOffset * index;
+            obj.transform.position = new Vector3(obj.transform.position.x, obj.transform.position.y, -6);
         }
     }
 
     private void MakeObjectStatic(GameObject obj)
     {
-        // Удаляем компоненты для взаимодействия
         var dragger = obj.GetComponent<ItemClickDetector>();
         if (dragger != null) Destroy(dragger);
 
-        // Удаляем коллайдер, если он есть
         var collider = obj.GetComponent<Collider2D>();
-        if (collider != null) Destroy(collider);
+        if (collider != null) collider.enabled = false;
 
-        // Делаем объект неинтерактивным
         obj.layer = LayerMask.NameToLayer("Ignore Raycast");
     }
 
@@ -166,7 +163,8 @@ public class Spawner : MonoBehaviour
         }
 
         GameObject newObj = Instantiate(item.prefab, spawnParent);
-        newObj.transform.localPosition = nextSpawnPos;
+        newObj.transform.position = nextSpawnPos;
+        newObj.transform.position = new Vector3(newObj.transform.position.x, newObj.transform.position.y, -6);
 
         float alpha = 1f - (spawnedObjects.Count * fadeStep);
         SetObjectAlpha(newObj, Mathf.Clamp(alpha, 0.3f, 1f));
@@ -194,7 +192,8 @@ public class Spawner : MonoBehaviour
         
         for (int i = 0; i < spawnedObjects.Count; i++)
         {
-            spawnedObjects[i].transform.localPosition = firstSpawnPos + spawnOffset * i;
+            spawnedObjects[i].transform.position = firstSpawnPos + spawnOffset * i;
+            spawnedObjects[i].transform.position = new Vector3(spawnedObjects[i].transform.position.x, spawnedObjects[i].transform.position.y, -6);
             float alpha = 1f - i * fadeStep;
             SetObjectAlpha(spawnedObjects[i], Mathf.Clamp(alpha, 0.3f, 1f));
             
@@ -226,7 +225,12 @@ public class Spawner : MonoBehaviour
         {
             if (obj != null) Destroy(obj);
         }
+        foreach (GameObject obj in fixedObjects)
+        {
+            if (obj != null) Destroy(obj);
+        }
         spawnedObjects.Clear();
+        fixedObjects.Clear();
         nextSpawnPos = firstSpawnPos;
     }
 }
