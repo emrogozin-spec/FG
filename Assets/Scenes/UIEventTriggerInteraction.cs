@@ -43,7 +43,7 @@ public class UIClickHack : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            // Проверяем, был ли клик по этому объекту
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             if (IsClickOnThisUIElement())
             {
                 if (!isAnimating)
@@ -56,13 +56,13 @@ public class UIClickHack : MonoBehaviour
 
     private bool IsClickOnThisUIElement()
     {
-        // Получаем RectTransform текущего объекта
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RectTransform пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         RectTransform rectTransform = GetComponent<RectTransform>();
 
-        // Конвертируем позицию мыши в локальные координаты RectTransform
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RectTransform
         Vector2 localMousePosition = rectTransform.InverseTransformPoint(Input.mousePosition);
 
-        // Проверяем, попадает ли точка в прямоугольник объекта
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         return rectTransform.rect.Contains(localMousePosition);
     }
 
