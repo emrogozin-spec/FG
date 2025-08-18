@@ -1,36 +1,34 @@
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
 public class Spawner : MonoBehaviour
 {
     [System.Serializable]
-    public class CollectableItem
+    public class ShopItem
     {
-        public GameObject prefab;
+        public GameObject uiPrefab; // UI префаб (должен иметь RectTransform)
         public string itemName;
+        public int price;
     }
 
-    [Header("Spawn Settings")]
-    public List<CollectableItem> itemsToSpawn = new List<CollectableItem>();
-    public Transform spawnParent;
-    public Vector3 firstSpawnPos = new Vector3(0, 4, -6); // Z = -6
-    public Vector3 spawnOffset = new Vector3(0, -1.2f, 0);
+    [Header("Shop Settings")]
+    public List<ShopItem> shopItems = new List<ShopItem>();
+    public Transform spawnParent; // Родитель для спауна объектов
+    public Vector2 firstSpawnPos = new Vector2(0, 0);
+    public Vector2 spawnOffset = new Vector2(0, -120f);
     public int maxSpawned = 5;
 
     [Header("Appearance")]
     public float fadeStep = 0.1f;
 
-    [Header("Background Settings")]
-    public Transform background; // Движущийся фон
-    public LayerMask backgroundLayer;
+    [Header("Scene Settings")]
+    public string targetSceneName = "MainScene"; // Сцена куда копируем
 
     private List<GameObject> spawnedObjects = new List<GameObject>();
-    private List<GameObject> fixedObjects = new List<GameObject>();
-    private Vector3 nextSpawnPos;
-    private Dictionary<GameObject, CollectableItem> itemMap = new Dictionary<GameObject, CollectableItem>();
-    private GameObject currentlyDraggedObject;
-    private Vector3 offset;
-    private Vector3 dragStartBackgroundPos;
+    private Vector2 nextSpawnPos;
+    private Dictionary<GameObject, ShopItem> itemMap = new Dictionary<GameObject, ShopItem>();
 
     private void Start()
     {
@@ -40,139 +38,101 @@ public class Spawner : MonoBehaviour
 
     private void SetupItemClickHandlers()
     {
-        foreach (CollectableItem item in itemsToSpawn)
+        foreach (ShopItem item in shopItems)
         {
-            if (item.prefab != null)
+            if (item.uiPrefab != null)
             {
-                var clicker = item.prefab.AddComponent<ItemClickDetector>();
-                clicker.Setup(this, item);
-                itemMap.Add(item.prefab, item);
+                var button = item.uiPrefab.GetComponent<Button>();
+                if (button == null) button = item.uiPrefab.AddComponent<Button>();
+                
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => OnItemClicked(item));
+                
+                itemMap.Add(item.uiPrefab, item);
             }
         }
     }
 
-    private void Update()
+    private void OnItemClicked(ShopItem item)
     {
-        HandleDrag();
-    }
-
-    private void HandleDrag()
-    {
-        if (Input.GetMouseButtonDown(0))
+        if (CanAfford(item.price))
         {
-            TryStartDrag();
+            SpawnItem(item);
+            ChargeForItem(item.price);
         }
-
-        if (currentlyDraggedObject != null)
+        else
         {
-            if (Input.GetMouseButton(0))
-            {
-                ContinueDrag();
-            }
-            else
-            {
-                EndDrag();
-            }
+            Debug.Log("Not enough money!");
+            // Здесь можно показать UI сообщение о недостатке средств
         }
     }
 
-    private void TryStartDrag()
+    private bool CanAfford(int price)
     {
-        RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-        if (hit.collider != null && (spawnedObjects.Contains(hit.collider.gameObject) || fixedObjects.Contains(hit.collider.gameObject)))
-        {
-            currentlyDraggedObject = hit.collider.gameObject;
-            offset = currentlyDraggedObject.transform.position - 
-                   Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
-            dragStartBackgroundPos = background.position;
-        }
+        // Реализуйте свою логику проверки денег
+        return true; // Заглушка
     }
 
-    private void ContinueDrag()
+    private void ChargeForItem(int amount)
     {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
-        Vector3 newPosition = mousePos + offset;
-        
-        // Учитываем движение фона
-        Vector3 backgroundMovement = background.position - dragStartBackgroundPos;
-        currentlyDraggedObject.transform.position = new Vector3(newPosition.x, newPosition.y, -6) + backgroundMovement;
+        // Реализуйте списание денег
     }
 
-    private void EndDrag()
-    {
-        RaycastHit2D hit = Physics2D.Raycast(
-            Camera.main.ScreenToWorldPoint(Input.mousePosition),
-            Vector2.zero,
-            Mathf.Infinity,
-            backgroundLayer);
-
-        if (hit.collider != null && background != null)
-        {
-            FixObjectToBackground(currentlyDraggedObject);
-        }
-        else if (spawnedObjects.Contains(currentlyDraggedObject))
-        {
-            ReturnObjectToSpawnPosition(currentlyDraggedObject);
-        }
-
-        currentlyDraggedObject = null;
-    }
-
-    private void FixObjectToBackground(GameObject obj)
-    {
-        // Устанавливаем Z = -6
-        obj.transform.position = new Vector3(obj.transform.position.x, obj.transform.position.y, -6);
-        
-        // Переносим в список зафиксированных
-        if (spawnedObjects.Contains(obj))
-        {
-            spawnedObjects.Remove(obj);
-            fixedObjects.Add(obj);
-            ShiftItemsUp();
-        }
-        
-        MakeObjectStatic(obj);
-    }
-
-    private void ReturnObjectToSpawnPosition(GameObject obj)
-    {
-        int index = spawnedObjects.IndexOf(obj);
-        if (index >= 0)
-        {
-            obj.transform.position = firstSpawnPos + spawnOffset * index;
-            obj.transform.position = new Vector3(obj.transform.position.x, obj.transform.position.y, -6);
-        }
-    }
-
-    private void MakeObjectStatic(GameObject obj)
-    {
-        var dragger = obj.GetComponent<ItemClickDetector>();
-        if (dragger != null) Destroy(dragger);
-
-        var collider = obj.GetComponent<Collider2D>();
-        if (collider != null) collider.enabled = false;
-
-        obj.layer = LayerMask.NameToLayer("Ignore Raycast");
-    }
-
-    public void SpawnItem(CollectableItem item)
+    public void SpawnItem(ShopItem item)
     {
         if (spawnedObjects.Count >= maxSpawned)
         {
             RemoveFirstItem();
         }
 
-        GameObject newObj = Instantiate(item.prefab, spawnParent);
-        newObj.transform.position = nextSpawnPos;
-        newObj.transform.position = new Vector3(newObj.transform.position.x, newObj.transform.position.y, -6);
+        // Создаем на текущей сцене
+        GameObject newObj = Instantiate(item.uiPrefab, spawnParent);
+        RectTransform rt = newObj.GetComponent<RectTransform>();
+        rt.anchoredPosition = nextSpawnPos;
 
-        float alpha = 1f - (spawnedObjects.Count * fadeStep);
-        SetObjectAlpha(newObj, Mathf.Clamp(alpha, 0.3f, 1f));
+        // Настраиваем прозрачность
+        SetObjectAlpha(newObj, 1f - (spawnedObjects.Count * fadeStep));
 
         spawnedObjects.Add(newObj);
         newObj.name = $"{item.itemName}_{spawnedObjects.Count}";
 
+        // Копируем на целевую сцену
+        CopyToTargetScene(item);
+
         nextSpawnPos += spawnOffset;
+    }
+
+    private void CopyToTargetScene(ShopItem item)
+    {
+        // Находим или загружаем целевую сцену
+        Scene targetScene = SceneManager.GetSceneByName(targetSceneName);
+        if (!targetScene.IsValid())
+        {
+            Debug.LogError($"Target scene {targetSceneName} not found!");
+            return;
+        }
+
+        // Находим корневой canvas на целевой сцене
+        Canvas targetCanvas = null;
+        GameObject[] rootObjects = targetScene.GetRootGameObjects();
+        foreach (GameObject go in rootObjects)
+        {
+            targetCanvas = go.GetComponentInChildren<Canvas>(true);
+            if (targetCanvas != null) break;
+        }
+
+        if (targetCanvas == null)
+        {
+            Debug.LogError("No Canvas found in target scene!");
+            return;
+        }
+
+        // Создаем копию на целевой сцене
+        GameObject sceneCopy = Instantiate(item.uiPrefab, targetCanvas.transform);
+        sceneCopy.name = $"{item.itemName}_Copy";
+
+        // Здесь можно добавить дополнительные настройки для копии
+        // Например, изменить размер, позицию или добавить специальные компоненты
     }
 
     private void RemoveFirstItem()
@@ -192,31 +152,22 @@ public class Spawner : MonoBehaviour
         
         for (int i = 0; i < spawnedObjects.Count; i++)
         {
-            spawnedObjects[i].transform.position = firstSpawnPos + spawnOffset * i;
-            spawnedObjects[i].transform.position = new Vector3(spawnedObjects[i].transform.position.x, spawnedObjects[i].transform.position.y, -6);
-            float alpha = 1f - i * fadeStep;
-            SetObjectAlpha(spawnedObjects[i], Mathf.Clamp(alpha, 0.3f, 1f));
+            RectTransform rt = spawnedObjects[i].GetComponent<RectTransform>();
+            rt.anchoredPosition = firstSpawnPos + spawnOffset * i;
             
-            CollectableItem item = itemMap[spawnedObjects[i]];
+            SetObjectAlpha(spawnedObjects[i], 1f - i * fadeStep);
+            
+            ShopItem item = itemMap[spawnedObjects[i]];
             spawnedObjects[i].name = $"{item.itemName}_{i + 1}";
         }
     }
 
     private void SetObjectAlpha(GameObject obj, float alpha)
     {
-        Renderer rend = obj.GetComponent<Renderer>();
-        if (rend != null)
-        {
-            Color c = rend.material.color;
-            c.a = alpha;
-            rend.material.color = c;
-        }
-        
         CanvasGroup cg = obj.GetComponent<CanvasGroup>();
-        if (cg != null)
-        {
-            cg.alpha = alpha;
-        }
+        if (cg == null) cg = obj.AddComponent<CanvasGroup>();
+        
+        cg.alpha = Mathf.Clamp(alpha, 0.3f, 1f);
     }
 
     public void ClearAll()
@@ -225,32 +176,7 @@ public class Spawner : MonoBehaviour
         {
             if (obj != null) Destroy(obj);
         }
-        foreach (GameObject obj in fixedObjects)
-        {
-            if (obj != null) Destroy(obj);
-        }
         spawnedObjects.Clear();
-        fixedObjects.Clear();
         nextSpawnPos = firstSpawnPos;
-    }
-}
-
-public class ItemClickDetector : MonoBehaviour
-{
-    private Spawner itemSpawner;
-    private Spawner.CollectableItem myItem;
-
-    public void Setup(Spawner spawner, Spawner.CollectableItem item)
-    {
-        this.itemSpawner = spawner;
-        this.myItem = item;
-    }
-
-    private void OnMouseDown()
-    {
-        if (itemSpawner != null)
-        {
-            itemSpawner.SpawnItem(myItem);
-        }
     }
 }
