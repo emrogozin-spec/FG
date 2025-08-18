@@ -1,30 +1,32 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement; // Добавлено это пространство имен
 
+[RequireComponent(typeof(Image))]
 public class ImageSceneTrigger : MonoBehaviour, IPointerClickHandler
 {
     public string targetSceneName;
 
     void Start()
     {
-        // Автоматически включаем Raycast Target
-        Image img = GetComponent<Image>();
-        if (img != null) img.raycastTarget = true;
+        GetComponent<Image>().raycastTarget = true;
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!string.IsNullOrEmpty(targetSceneName))
         {
-            // Если менеджер не существует, создаём его
-            if (SceneFadeManager.Instance == null)
-            {
-                GameObject managerObj = new GameObject("SceneFadeManager");
-                managerObj.AddComponent<SceneFadeManager>();
-            }
+            SceneFadeManager fadeManager = FindObjectOfType<SceneFadeManager>();
 
-            SceneFadeManager.Instance.LoadSceneWithFade(targetSceneName);
+            if (fadeManager != null)
+            {
+                fadeManager.LoadScene(targetSceneName);
+            }
+            else
+            {
+                SceneManager.LoadScene(targetSceneName);
+            }
         }
     }
 }

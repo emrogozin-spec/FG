@@ -5,111 +5,71 @@ using System.Collections;
 
 public class SceneFadeManager : MonoBehaviour
 {
-    public static SceneFadeManager Instance;
-
     [Header("Настройки")]
     public float fadeDuration = 1f;
     public Color fadeColor = Color.black;
 
     private Image fadeImage;
-    private Canvas fadeCanvas;
 
-    void Awake()
+    void Start()
     {
-        // Если Instance уже существует, уничтожаем дубликат
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-
-        // Инициализируем затемнение, если ещё не сделано
-        if (fadeImage == null)
-        {
-            CreateFadeOverlay();
-        }
-
-        // Подписываемся на событие загрузки сцены
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    void OnDestroy()
-    {
-        // Отписываемся при уничтожении
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        // При загрузке новой сцены запускаем плавное появление
-        if (fadeImage != null)
-        {
-            fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 1f);
-            StartCoroutine(Fade(1f, 0f));
-        }
+        CreateFadeOverlay();
+        StartCoroutine(FadeIn());
     }
 
     void CreateFadeOverlay()
     {
-        // Создаём Canvas для затемнения
-        fadeCanvas = gameObject.AddComponent<Canvas>();
-        fadeCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        fadeCanvas.sortingOrder = 9999;
+        // Создаем Canvas
+        GameObject canvasObj = new GameObject("FadeCanvas");
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 9999;
 
-        // Создаём Image (чёрный экран)
+        // Создаем Image для затемнения
         GameObject imageObj = new GameObject("FadeImage");
         fadeImage = imageObj.AddComponent<Image>();
-        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 0f);
+        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 1f);
+        fadeImage.raycastTarget = false;
 
-        // Растягиваем на весь экран
+        // Настраиваем размер
         RectTransform rt = imageObj.GetComponent<RectTransform>();
-        rt.SetParent(fadeCanvas.transform);
+        rt.SetParent(canvas.transform);
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
     }
 
-    public void LoadSceneWithFade(string sceneName)
+    public void LoadScene(string sceneName)
     {
-        StartCoroutine(FadeAndLoad(sceneName));
+        StartCoroutine(FadeOutAndLoad(sceneName));
     }
 
-    IEnumerator FadeAndLoad(string sceneName)
+    IEnumerator FadeIn()
     {
-        // 1️⃣ Затемнение (0 → 1)
-        yield return Fade(0f, 1f);
-
-        // 2️⃣ Асинхронная загрузка сцены
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-        asyncLoad.allowSceneActivation = false;
-
-        while (!asyncLoad.isDone)
+        float elapsed = 0f;
+        while (elapsed < fadeDuration)
         {
-            if (asyncLoad.progress >= 0.9f)
-            {
-                asyncLoad.allowSceneActivation = true;
-            }
-            yield return null;
-        }
-    }
-
-    IEnumerator Fade(float startAlpha, float endAlpha)
-    {
-        float timer = 0f;
-        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, startAlpha);
-
-        while (timer < fadeDuration)
-        {
-            float alpha = Mathf.Lerp(startAlpha, endAlpha, timer / fadeDuration);
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / fadeDuration);
             fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, alpha);
-            timer += Time.deltaTime;
+            elapsed += Time.deltaTime;
             yield return null;
         }
+        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 0f);
+    }
 
-        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, endAlpha);
+    IEnumerator FadeOutAndLoad(string sceneName)
+    {
+        float elapsed = 0f;
+        while (elapsed < fadeDuration)
+        {
+            float alpha = Mathf.Lerp(0f, 1f, elapsed / fadeDuration);
+            fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, alpha);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 1f);
+
+        SceneManager.LoadScene(sceneName);
     }
 }
