@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 9135561615955827709}
   - component: {fileID: 3425089095575559796}
   - component: {fileID: 1146684786040489935}
-  - component: {fileID: 4593032647812096725}
+  - component: {fileID: 33391511946809794}
   m_Layer: 5
   m_Name: pot
   m_TagString: Untagged
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &4593032647812096725
+--- !u!114 &33391511946809794
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
