@@ -673,20 +673,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de9e2df86f255d14683fc8f76aa5c654, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shopItemsContainer: {fileID: 1434083725}
-  shopItemPrefab: {fileID: 4689686105855817954}
-  inventoryContainer: {fileID: 2134755589}
-  inventoryItemPrefab: {fileID: 0}
-  availableItems:
-  - id: 1
-    itemName: 3
-    price: 0
-    icon: {fileID: 0}
-    description: 
-  moneyText: {fileID: 0}
-  feedbackText: {fileID: 0}
-  playerInventory: []
-  playerMoney: 1000
 --- !u!4 &756854659
 Transform:
   m_ObjectHideFlags: 0
@@ -1127,6 +1113,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clickSound: {fileID: 8300000, guid: 62d6dad9d411b1744a773c7cd5fca103, type: 3}
   volume: 1
+  minTimeBetweenClicks: 0.1
+  blockDuringPlayback: 1
 --- !u!1 &2134755588
 GameObject:
   m_ObjectHideFlags: 0
@@ -1658,11 +1646,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a9e5413497620c245a5c84e40f076863, type: 3}
---- !u!1 &4689686105855817954 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1698507380372229818, guid: c8e96dfee1b36d041ac3f5129ce8e69d, type: 3}
-  m_PrefabInstance: {fileID: 966137238935837787}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6212332156950443618
 PrefabInstance:
   m_ObjectHideFlags: 0
