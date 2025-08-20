@@ -33,5 +33,8 @@ public class ObjectSpawner : MonoBehaviour, IPointerClickHandler
         
         SpawnManager.Instance.AddToSpawnQueue(objectPrefab);
         Debug.Log($"✅ Добавлен в очередь: {objectPrefab.name}");
+        
+        // Автоматически спавним объект сразу после добавления в очередь
+        SpawnManager.Instance.SpawnAllQueuedObjects();
     }
 }

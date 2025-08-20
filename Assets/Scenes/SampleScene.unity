@@ -147,7 +147,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 280962599}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 2.353846, y: 0.6275078, z: 0.71716}
   m_ConstrainProportionsScale: 0
@@ -238,6 +238,58 @@ MonoBehaviour:
   volume: 1
   minTimeBetweenClicks: 0.1
   blockDuringPlayback: 1
+--- !u!1 &355267324
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 355267326}
+  - component: {fileID: 355267325}
+  m_Layer: 0
+  m_Name: SpawnManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &355267325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 355267324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8dcc52fd793ada4ba5f1412ae2d90f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnPointTag: SpawnPoint
+  verticalSpacing: 0.5
+  spawnOffset: {x: 0, y: 0, z: 0}
+  spawnAsList: 1
+  keepObjectsBetweenSceneLoads: 1
+  autoAddDraggableComponent: 1
+  defaultDragSpeed: 15
+  fallbackSpawnPosition: {x: 0, y: 3, z: 0}
+--- !u!4 &355267326
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 355267324}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3, y: 0.5, z: -10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -834,57 +886,6 @@ Transform:
   - {fileID: 685006412}
   m_Father: {fileID: 775888443}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &966831474
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 966831475}
-  - component: {fileID: 966831476}
-  m_Layer: 0
-  m_Name: SpawnManager
-  m_TagString: SpawnPoint
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &966831475
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 966831474}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.20001219, y: -0.1000061, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &966831476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 966831474}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8dcc52fd793ada4ba5f1412ae2d90f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawnPointTag: SpawnPoint
-  verticalSpacing: 2
-  spawnOffset: {x: 0, y: 0, z: 0}
-  keepObjectsBetweenSceneLoads: 1
-  autoAddDraggableComponent: 1
-  defaultDragSpeed: 15
-  fallbackSpawnPosition: {x: 0, y: 5, z: 0}
 --- !u!1 &1142799639
 GameObject:
   m_ObjectHideFlags: 0
@@ -1073,6 +1074,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uiElementsToMove:
   - {fileID: 2104616900}
+  - {fileID: 0}
   arrowImage: {fileID: 1287018226}
   moveDistance: 200
   animationDuration: 1
@@ -1277,8 +1279,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1287018226}
-  - {fileID: 2104616900}
   - {fileID: 280962600}
+  - {fileID: 2104616900}
   - {fileID: 1645252806}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1709,4 +1711,4 @@ SceneRoots:
   - {fileID: 2082787076}
   - {fileID: 1413373466}
   - {fileID: 775888443}
-  - {fileID: 966831475}
+  - {fileID: 355267326}

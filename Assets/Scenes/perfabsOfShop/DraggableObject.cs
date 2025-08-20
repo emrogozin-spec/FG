@@ -6,13 +6,28 @@ public class DraggableObject : MonoBehaviour
     public float dragSpeed = 10f;
     public bool isDraggable = true;
     
+    [HideInInspector]
+    public Camera mainCamera; // Теперь публичное поле для установки извне
+    
     private bool isDragging = false;
     private Vector3 offset;
-    private Camera mainCamera;
     
     void Start()
     {
-        mainCamera = Camera.main;
+        // Если камера не установлена, пытаемся найти
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+    }
+    
+    void Update()
+    {
+        // Постоянно проверяем наличие камеры
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
     }
     
     void OnMouseDown()
@@ -40,6 +55,8 @@ public class DraggableObject : MonoBehaviour
     
     private Vector3 GetMouseWorldPos()
     {
+        if (mainCamera == null) return Vector3.zero;
+        
         Vector3 mousePoint = Input.mousePosition;
         mousePoint.z = Mathf.Abs(mainCamera.transform.position.z);
         return mainCamera.ScreenToWorldPoint(mousePoint);
@@ -49,5 +66,11 @@ public class DraggableObject : MonoBehaviour
     public void SetDraggable(bool draggable)
     {
         isDraggable = draggable;
+    }
+    
+    // Метод для установки камеры извне
+    public void SetCamera(Camera camera)
+    {
+        mainCamera = camera;
     }
 }
